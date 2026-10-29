@@ -1,10 +1,11 @@
 # Serveur MCP Amat : Google OAuth et liste blanche (Cloudflare Worker)
 
-Ce Worker expose le serveur MCP Odoo d'Amat (`https://mcp-amat.nasta-univers.com/mcp`) aux connecteurs MCP distants de Claude (Team/Enterprise). Chaque utilisateur s'authentifie individuellement avec Google. Seuls trois comptes peuvent obtenir un accès :
+Ce Worker expose le serveur MCP Odoo d'Amat (`https://mcp-amat.nasta-univers.com/mcp`) aux connecteurs MCP distants de Claude (Team/Enterprise). Chaque utilisateur s'authentifie individuellement avec Google. Seuls quatre comptes peuvent obtenir un accès :
 
 - `bangaly@nasta-univers.com`
 - `aissata@nasta-univers.com`
-- `talby@nasta-univers.com`
+- `taliby@nasta-univers.com`
+- `mbalde@nasta-univers.com`
 
 Il est construit sur le modèle `remote-mcp-google-oauth` du dépôt Cloudflare AI et sur [`@cloudflare/workers-oauth-provider`](https://github.com/cloudflare/workers-oauth-provider) 1.2.4.
 
@@ -94,4 +95,4 @@ En local, seuls les `redirect_uri` de Claude sont acceptés. Pour tester avec MC
 
 - **Google Workspace** : si `nasta-univers.com` est un domaine Google Workspace, exiger en plus la revendication `hd === "nasta-univers.com"` renforcerait la vérification. Seraient alors exclus un compte Google personnel créé avec la même adresse ou un ancien compte « en conflit ». Ce contrôle n'est pas activé, car il bloquerait tout le monde si le domaine n'est pas sur Workspace.
 - **Abus anonymes** : `/register` et `/authorize` écrivent dans KV sans authentification. Sur l'offre Workers Free (1 000 écritures KV par jour), un flot de requêtes peut épuiser le quota et bloquer les connexions jusqu'au lendemain. Une offre payante, ou une liaison Workers Rate Limiting, limite ce risque.
-- **Sessions MCP** : elles ne sont pas liées à l'utilisateur OAuth. Les trois comptes partagent la même identité Odoo côté Amat, l'impact est donc limité.
+- **Sessions MCP** : elles ne sont pas liées à l'utilisateur OAuth. Les comptes autorisés partagent la même identité Odoo côté Amat, l'impact est donc limité.

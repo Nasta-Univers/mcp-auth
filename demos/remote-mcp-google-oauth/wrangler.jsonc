@@ -21,7 +21,7 @@
     // Every token is bound to it, and the Google callback is derived from it (<origin>/callback).
     // The placeholder is not a valid URL on purpose: the Worker refuses to start until it is set.
     // For `wrangler dev`, .dev.vars overrides it with http://localhost:8788/mcp.
-    "MCP_RESOURCE": "https://<name>.<account-subdomain>.workers.dev/mcp",
+    "MCP_RESOURCE": "https://amat-mcp-oauth.mbalde.workers.dev/mcp",
     // The Amat MCP endpoint. The relay only accepts https://mcp-amat.nasta-univers.com/mcp
     // or the same URL with a trailing slash (see src/amat-relay.ts).
     "AMAT_MCP_URL": "https://mcp-amat.nasta-univers.com/mcp"
@@ -30,7 +30,7 @@
     {
       "binding": "OAUTH_KV",
       // TO SET: the id printed by `wrangler kv namespace create OAUTH_KV`
-      "id": "<Add-KV-ID>"
+      "id": "ccc23e115ec645da94483df892b87f24"
     }
   ],
   "observability": {

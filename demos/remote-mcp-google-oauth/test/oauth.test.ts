@@ -32,7 +32,8 @@ import {
 const ALLOWED = [
 	"bangaly@nasta-univers.com",
 	"aissata@nasta-univers.com",
-	"talby@nasta-univers.com",
+	"taliby@nasta-univers.com",
+	"mbalde@nasta-univers.com",
 ];
 
 afterEach(async () => {
@@ -51,10 +52,10 @@ describe("access policy", () => {
 		expect(isAllowedEmail("  Bangaly@Nasta-Univers.COM ")).toBe(true);
 	});
 
-	it("allows exactly the three accounts", () => {
+	it("allows exactly the listed accounts", () => {
 		for (const email of ALLOWED) expect(isAllowedEmail(email)).toBe(true);
 		for (const email of [
-			"mbalde@nasta-univers.com",
+			"intrus@nasta-univers.com",
 			"bangaly@nasta-univers.com.evil.com",
 			"bangaly@nasta-univers.co",
 			"bangaly+x@nasta-univers.com",
@@ -131,7 +132,7 @@ describe("Google sign-in with the allowlist", () => {
 	});
 
 	it.each([
-		"mbalde@nasta-univers.com",
+		"intrus@nasta-univers.com",
 		"intrus@gmail.com",
 		"bangaly@nasta-univers.com.evil.com",
 		"bangaly+claude@nasta-univers.com",
@@ -154,7 +155,7 @@ describe("Google sign-in with the allowlist", () => {
 		["the string 'true'", "true"],
 	])("refuses an allowed address whose verification is %s", async (_label, verified) => {
 		const { callback } = await runAuthorization(
-			googleProfile("talby@nasta-univers.com", { email_verified: verified }),
+			googleProfile("taliby@nasta-univers.com", { email_verified: verified }),
 		);
 		expect(callback.status).toBe(403);
 		expectNoGrantIssued(callback);
