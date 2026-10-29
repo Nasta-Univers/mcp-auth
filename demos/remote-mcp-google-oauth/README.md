@@ -1,11 +1,10 @@
 # Serveur MCP Amat : Google OAuth et liste blanche (Cloudflare Worker)
 
-Ce Worker expose le serveur MCP Odoo d'Amat (`https://mcp-amat.nasta-univers.com/mcp`) aux connecteurs MCP distants de Claude (Team/Enterprise). Chaque utilisateur s'authentifie individuellement avec Google. Seuls quatre comptes peuvent obtenir un accès :
+Ce Worker expose le serveur MCP Odoo d'Amat (`https://mcp-amat.nasta-univers.com/mcp`) aux connecteurs MCP distants de Claude (Team/Enterprise). Chaque utilisateur s'authentifie individuellement avec Google. Seuls trois comptes peuvent obtenir un accès :
 
 - `bangaly@nasta-univers.com`
 - `aissata@nasta-univers.com`
 - `taliby@nasta-univers.com`
-- `mbalde@nasta-univers.com`
 
 Il est construit sur le modèle `remote-mcp-google-oauth` du dépôt Cloudflare AI et sur [`@cloudflare/workers-oauth-provider`](https://github.com/cloudflare/workers-oauth-provider) 1.2.4.
 

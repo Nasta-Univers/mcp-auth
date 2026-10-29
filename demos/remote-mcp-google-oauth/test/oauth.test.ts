@@ -33,7 +33,6 @@ const ALLOWED = [
 	"bangaly@nasta-univers.com",
 	"aissata@nasta-univers.com",
 	"taliby@nasta-univers.com",
-	"mbalde@nasta-univers.com",
 ];
 
 afterEach(async () => {
@@ -55,6 +54,7 @@ describe("access policy", () => {
 	it("allows exactly the listed accounts", () => {
 		for (const email of ALLOWED) expect(isAllowedEmail(email)).toBe(true);
 		for (const email of [
+			"mbalde@nasta-univers.com",
 			"intrus@nasta-univers.com",
 			"bangaly@nasta-univers.com.evil.com",
 			"bangaly@nasta-univers.co",
