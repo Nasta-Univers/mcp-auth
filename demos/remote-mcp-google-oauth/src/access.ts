@@ -8,6 +8,7 @@ export const ALLOWED_EMAILS: ReadonlySet<string> = new Set([
 	"dg@nasta-univers.com",
 	"aissata@nasta-univers.com",
 	"taliby@nasta-univers.com",
+	"tdiakhaby@nasta-univers.com",
 ]);
 
 // Claude's OAuth callbacks for remote MCP connectors. An authorization request whose

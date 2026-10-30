@@ -33,6 +33,7 @@ const ALLOWED = [
 	"dg@nasta-univers.com",
 	"aissata@nasta-univers.com",
 	"taliby@nasta-univers.com",
+	"tdiakhaby@nasta-univers.com",
 ];
 
 afterEach(async () => {
