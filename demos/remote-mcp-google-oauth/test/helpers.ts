@@ -241,7 +241,7 @@ export async function exchangeCode(location: string, clientId: string, verifier:
 }
 
 /** Completes the whole flow for an allowed account and returns its MCP access token. */
-export async function obtainAccessToken(email = "bangaly@nasta-univers.com"): Promise<string> {
+export async function obtainAccessToken(email = "dg@nasta-univers.com"): Promise<string> {
 	const { callback, clientId, upstreams, verifier } = await runAuthorization(
 		googleProfile(email),
 	);

@@ -30,7 +30,7 @@ import {
 } from "./helpers";
 
 const ALLOWED = [
-	"bangaly@nasta-univers.com",
+	"dg@nasta-univers.com",
 	"aissata@nasta-univers.com",
 	"taliby@nasta-univers.com",
 ];
@@ -47,23 +47,24 @@ function expectNoGrantIssued(callback: Response) {
 
 describe("access policy", () => {
 	it("normalizes addresses by trimming and lowercasing", () => {
-		expect(normalizeEmail("  Bangaly@Nasta-Univers.COM \t")).toBe("bangaly@nasta-univers.com");
-		expect(isAllowedEmail("  Bangaly@Nasta-Univers.COM ")).toBe(true);
+		expect(normalizeEmail("  DG@Nasta-Univers.COM \t")).toBe("dg@nasta-univers.com");
+		expect(isAllowedEmail("  DG@Nasta-Univers.COM ")).toBe(true);
 	});
 
 	it("allows exactly the listed accounts", () => {
 		for (const email of ALLOWED) expect(isAllowedEmail(email)).toBe(true);
 		for (const email of [
+			"bangaly@nasta-univers.com",
 			"mbalde@nasta-univers.com",
 			"intrus@nasta-univers.com",
-			"bangaly@nasta-univers.com.evil.com",
-			"bangaly@nasta-univers.co",
-			"bangaly+x@nasta-univers.com",
-			"bangaly@gmail.com",
+			"dg@nasta-univers.com.evil.com",
+			"dg@nasta-univers.co",
+			"dg+x@nasta-univers.com",
+			"dg@gmail.com",
 			"",
 			undefined,
 			null,
-			["bangaly@nasta-univers.com"],
+			["dg@nasta-univers.com"],
 		]) {
 			expect(isAllowedEmail(email)).toBe(false);
 		}
@@ -132,10 +133,11 @@ describe("Google sign-in with the allowlist", () => {
 	});
 
 	it.each([
+		"bangaly@nasta-univers.com",
 		"intrus@nasta-univers.com",
 		"intrus@gmail.com",
-		"bangaly@nasta-univers.com.evil.com",
-		"bangaly+claude@nasta-univers.com",
+		"dg@nasta-univers.com.evil.com",
+		"dg+claude@nasta-univers.com",
 	])("refuses the verified but unlisted account %s without issuing anything", async (email) => {
 		const { callback } = await runAuthorization(googleProfile(email));
 		expect(callback.status).toBe(403);
@@ -175,18 +177,18 @@ describe("Google sign-in with the allowlist", () => {
 		const pkce = await createPkcePair();
 		const page = await getAuthorize(
 			jar,
-			`${authorizeUrl({ clientId, codeChallenge: pkce.challenge })}&email=bangaly@nasta-univers.com`,
+			`${authorizeUrl({ clientId, codeChallenge: pkce.challenge })}&email=dg@nasta-univers.com`,
 		);
 		const toGoogle = await postConsent(jar, extractHandle(await page.text()));
 		const state = new URL(toGoogle.headers.get("Location")!).searchParams.get("state")!;
 		const callback = await call(
 			new Request(
-				`${ORIGIN}/callback?code=${GOOGLE_CODE}&state=${state}&email=bangaly@nasta-univers.com`,
+				`${ORIGIN}/callback?code=${GOOGLE_CODE}&state=${state}&email=dg@nasta-univers.com`,
 				{
 					headers: {
 						Cookie: jar.header(),
-						"X-Email": "bangaly@nasta-univers.com",
-						"X-Forwarded-Email": "bangaly@nasta-univers.com",
+						"X-Email": "dg@nasta-univers.com",
+						"X-Forwarded-Email": "dg@nasta-univers.com",
 					},
 				},
 			),
@@ -197,7 +199,7 @@ describe("Google sign-in with the allowlist", () => {
 	});
 
 	it("returns the user to Claude with access_denied when Google sign-in is cancelled", async () => {
-		const upstreams = mockUpstreams({ google: googleProfile("bangaly@nasta-univers.com") });
+		const upstreams = mockUpstreams({ google: googleProfile("dg@nasta-univers.com") });
 		const clientId = await registerClient();
 		const jar = new CookieJar();
 		const pkce = await createPkcePair();
@@ -219,7 +221,7 @@ describe("Google sign-in with the allowlist", () => {
 
 	it("fails closed when Google rejects the code exchange", async () => {
 		mockUpstreams({
-			google: googleProfile("bangaly@nasta-univers.com"),
+			google: googleProfile("dg@nasta-univers.com"),
 			googleTokenStatus: 400,
 		});
 		const clientId = await registerClient();
@@ -434,7 +436,7 @@ describe("CSRF and OAuth state", () => {
 	});
 
 	it("refuses the Google callback without the state binding cookie", async () => {
-		const upstreams = mockUpstreams({ google: googleProfile("bangaly@nasta-univers.com") });
+		const upstreams = mockUpstreams({ google: googleProfile("dg@nasta-univers.com") });
 		const jar = new CookieJar();
 		const page = await consentPage(jar);
 		const toGoogle = await postConsent(jar, extractHandle(await page.text()));
@@ -447,7 +449,7 @@ describe("CSRF and OAuth state", () => {
 	});
 
 	it("refuses a forged, missing or replayed state", async () => {
-		const upstreams = mockUpstreams({ google: googleProfile("bangaly@nasta-univers.com") });
+		const upstreams = mockUpstreams({ google: googleProfile("dg@nasta-univers.com") });
 		const jar = new CookieJar();
 		const page = await consentPage(jar);
 		const toGoogle = await postConsent(jar, extractHandle(await page.text()));

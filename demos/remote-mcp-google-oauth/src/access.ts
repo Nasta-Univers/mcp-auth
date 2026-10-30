@@ -5,7 +5,7 @@
 
 // The only Google accounts allowed to obtain an MCP token. Compared after normalizeEmail().
 export const ALLOWED_EMAILS: ReadonlySet<string> = new Set([
-	"bangaly@nasta-univers.com",
+	"dg@nasta-univers.com",
 	"aissata@nasta-univers.com",
 	"taliby@nasta-univers.com",
 ]);

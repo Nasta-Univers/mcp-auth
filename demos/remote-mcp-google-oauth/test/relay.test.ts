@@ -31,7 +31,7 @@ function relay(
 	request: Request,
 	options: { email?: string | null; env?: Partial<Env>; limits?: Partial<RelayLimits> } = {},
 ): Promise<Response> {
-	const email = options.email === undefined ? "bangaly@nasta-univers.com" : options.email;
+	const email = options.email === undefined ? "dg@nasta-univers.com" : options.email;
 	const ctx = {
 		passThroughOnException() {},
 		props: email === null ? undefined : { email, name: "Test User", sub: "1234567890" },
@@ -76,7 +76,7 @@ const toolsListResult = (id: number | string) => ({
 describe("who may use the relay", () => {
 	it.each([
 		["no identity", null],
-		["an account removed from the allowlist", "ancien@nasta-univers.com"],
+		["an account removed from the allowlist", "bangaly@nasta-univers.com"],
 	])("refuses %s without contacting Amat", async (_label, email) => {
 		const upstreams = mockUpstreams({ amat: () => new Response("should not be called") });
 		const response = await relay(mcpRequest({ id: 1, jsonrpc: "2.0", method: "ping" }), {

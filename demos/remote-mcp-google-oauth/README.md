@@ -2,7 +2,7 @@
 
 Ce Worker expose le serveur MCP Odoo d'Amat (`https://mcp-amat.nasta-univers.com/mcp`) aux connecteurs MCP distants de Claude (Team/Enterprise). Chaque utilisateur s'authentifie individuellement avec Google. Seuls trois comptes peuvent obtenir un accès :
 
-- `bangaly@nasta-univers.com`
+- `dg@nasta-univers.com`
 - `aissata@nasta-univers.com`
 - `taliby@nasta-univers.com`
 
