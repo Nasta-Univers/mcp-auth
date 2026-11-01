@@ -816,3 +816,46 @@ describe("what reaches Amat is what was checked", () => {
 		await vi.waitFor(() => expect(cancelled).toBe(true));
 	});
 });
+
+describe("checking the shared secret before sending it", () => {
+	it.each([
+		["missing", ""],
+		["missing", "   "],
+		["non_printable_ascii", "tok\u200Ben"],
+		["non_printable_ascii", "tokén"],
+		["non_printable_ascii", "“token”"],
+	])(
+		"refuses a secret that cannot work (%s) and logs why, never its value",
+		async (issue, secret) => {
+			const errors: unknown[][] = [];
+			vi.spyOn(console, "error").mockImplementation((...args: unknown[]) => {
+				errors.push(args);
+			});
+			const upstreams = mockUpstreams({ amat: () => new Response("should not be called") });
+			const response = await relay(mcpRequest({ id: 1, jsonrpc: "2.0", method: "ping" }), {
+				env: { AMAT_ACCESS_TOKEN: secret },
+			});
+			expect(response.status).toBe(500);
+			expect(upstreams.calls).toHaveLength(0);
+			const logged = errors.find(([event]) => event === "relay_misconfigured");
+			expect(logged?.[1]).toMatchObject({ amatAccessTokenIssue: issue });
+			if (secret.trim()) expect(JSON.stringify(errors)).not.toContain(secret);
+		},
+	);
+
+	// Anything that may work today keeps working: only what Cloudflare would reject is refused.
+	it.each([
+		["with an inner space", "abc def", "abc def"],
+		["long", "x".repeat(600), "x".repeat(600)],
+		["with surrounding whitespace", ` ${AMAT_SECRET}\n`, AMAT_SECRET],
+	])("still sends a secret %s", async (_label, secret, sent) => {
+		const upstreams = mockUpstreams({
+			amat: () => Response.json({ id: 1, jsonrpc: "2.0", result: {} }),
+		});
+		const response = await relay(mcpRequest({ id: 1, jsonrpc: "2.0", method: "ping" }), {
+			env: { AMAT_ACCESS_TOKEN: secret },
+		});
+		expect(response.status).toBe(200);
+		expect(upstreams.calls[0].headers.get("X-Access-Token")).toBe(sent);
+	});
+});

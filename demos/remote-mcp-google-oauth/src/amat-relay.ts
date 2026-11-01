@@ -78,6 +78,18 @@ function resolveUpstreamUrl(configured: unknown): string | null {
 	return ALLOWED_UPSTREAM_URLS.has(url) ? url : null;
 }
 
+/**
+ * Why the AMAT_ACCESS_TOKEN secret cannot be sent, or null when it can. Only what can never
+ * work is refused: a missing secret, or a character outside printable ASCII (an invisible or
+ * typographic one pasted along), which Cloudflare rejects with a bare 400 before the request
+ * reaches Nginx. Never includes the value itself.
+ */
+function accessTokenIssue(secret: unknown): string | null {
+	if (typeof secret !== "string" || secret.trim().length === 0) return "missing";
+	if (!/^[\t\x20-\x7e]+$/.test(secret.trim())) return "non_printable_ascii";
+	return null;
+}
+
 /** Ends the response, and cancels the Amat response, once it exceeds `maxBytes`. */
 function createByteLimit(maxBytes: number): TransformStream<Uint8Array, Uint8Array> {
 	let total = 0;
@@ -170,14 +182,16 @@ export function createAmatRelay(limits: RelayLimits = DEFAULT_LIMITS) {
 			}
 
 			const upstreamUrl = resolveUpstreamUrl(env.AMAT_MCP_URL);
-			const sharedSecret = env.AMAT_ACCESS_TOKEN;
-			if (!upstreamUrl || typeof sharedSecret !== "string" || sharedSecret.length === 0) {
+			const secretIssue = accessTokenIssue(env.AMAT_ACCESS_TOKEN);
+			if (!upstreamUrl || secretIssue) {
 				console.error("relay_misconfigured", {
+					amatAccessTokenIssue: secretIssue,
 					amatMcpUrlAllowed: upstreamUrl !== null,
-					amatAccessTokenSet: typeof sharedSecret === "string" && sharedSecret.length > 0,
 				});
 				return rpcError(500, -32603, "The MCP relay is not configured");
 			}
+			// Headers drop surrounding whitespace anyway; trimming makes that explicit.
+			const sharedSecret = (env.AMAT_ACCESS_TOKEN as string).trim();
 
 			let body: string | undefined;
 			let inspected: InspectedPayload | undefined;
