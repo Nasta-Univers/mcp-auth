@@ -1,0 +1,52 @@
+/**
+ * KB Trading MCP OAuth Worker. Independent of the AMAT Worker (demos/remote-mcp-google-oauth):
+ * its own name, URL, KV namespace, secrets and allowlist.
+ *
+ * For more details on how to configure Wrangler, refer to:
+ * https://developers.cloudflare.com/workers/wrangler/configuration/
+ *
+ * Secrets (never in this file): set them with `npx wrangler secret put <NAME>` from this folder
+ *   GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, KBTRADING_ACCESS_TOKEN
+ */
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "kbtrading-mcp-oauth",
+  "main": "src/index.ts",
+  "compatibility_date": "2025-03-10",
+  "compatibility_flags": ["nodejs_compat"],
+  "workers_dev": true,
+  // Version preview URLs would serve the same Worker on other hostnames.
+  "preview_urls": false,
+  "vars": {
+    // The URL MCP clients connect to. Every token is bound to it, and the Google callback is
+    // derived from it: https://kbtrading-mcp-oauth.mbalde.workers.dev/callback
+    // For `wrangler dev`, .dev.vars overrides it with http://localhost:8789/mcp.
+    "MCP_RESOURCE": "https://kbtrading-mcp-oauth.mbalde.workers.dev/mcp",
+    // The KB Trading MCP endpoint. The relay only accepts
+    // https://mcp-kbtrading.nasta-univers.com/mcp or the same URL with a trailing slash
+    // (see src/kbtrading-relay.ts).
+    "KBTRADING_MCP_URL": "https://mcp-kbtrading.nasta-univers.com/mcp"
+  },
+  "kv_namespaces": [
+    {
+      // The binding name is fixed by @cloudflare/workers-oauth-provider; the namespace is
+      // KB Trading's own. Never use the AMAT namespace id here.
+      "binding": "OAUTH_KV",
+      // TO SET: the id printed by `npx wrangler kv namespace create KBTRADING_OAUTH_KV`.
+      // The placeholder is not a valid id on purpose: a deploy fails until it is set.
+      "id": "964b8ddc321044048065c609ea6e76f7"
+    }
+  ],
+  "observability": {
+    "enabled": true,
+    "logs": {
+      // Invocation logs record request URLs, including Google's authorization code on
+      // /callback. The Worker's own console logs never contain codes, tokens or secrets.
+      "invocation_logs": false
+    }
+  },
+  "dev": {
+    // Not 8788, so it can run next to the AMAT Worker in local development.
+    "port": 8789
+  }
+}

@@ -1,0 +1,4 @@
+MCP_RESOURCE=http://localhost:8789/mcp
+GOOGLE_CLIENT_ID=<your google oauth client id>
+GOOGLE_CLIENT_SECRET=<your google oauth client secret>
+KBTRADING_ACCESS_TOKEN=<the token alone, without "Bearer"; the Worker sends X-Access-Token: Bearer <token>>

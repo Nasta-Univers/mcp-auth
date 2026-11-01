@@ -1,0 +1,28 @@
+{
+	"name": "remote-mcp-google-oauth-kbtrading",
+	"version": "0.0.1",
+	"private": true,
+	"type": "module",
+	"scripts": {
+		"deploy": "wrangler deploy",
+		"dev": "wrangler dev",
+		"start": "wrangler dev",
+		"cf-typegen": "wrangler types",
+		"lint": "oxlint -c ../../.oxlintrc.json",
+		"test": "vitest",
+		"test:ci": "vitest --watch=false",
+		"type-check": "tsc --noEmit && tsc --noEmit -p test"
+	},
+	"dependencies": {
+		"@cloudflare/workers-oauth-provider": "^1.2.4",
+		"hono": "^4.12.27"
+	},
+	"devDependencies": {
+		"@cloudflare/vitest-pool-workers": "^0.16.20",
+		"@cloudflare/workers-types": "^4.20260628.1",
+		"oxlint": "^1.71.0",
+		"typescript": "6.0.3",
+		"vitest": "~4.1.9",
+		"wrangler": "^4.105.0"
+	}
+}
