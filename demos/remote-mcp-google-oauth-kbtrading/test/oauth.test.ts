@@ -170,6 +170,29 @@ describe("Google sign-in with the allowlist", () => {
 		expect(await kvKeys("grant:")).toEqual([]);
 	});
 
+	it.each([
+		["missing (a personal Google account)", undefined],
+		["another Workspace", "gmail.com"],
+		["a lookalike domain", "nasta-univers.com.evil.com"],
+	])(
+		"refuses an allowed address whose Google Workspace domain is %s",
+		async (_label, hostedDomain) => {
+			const { callback } = await runAuthorization(
+				googleProfile("dg@nasta-univers.com", { hd: hostedDomain }),
+			);
+			expect(callback.status).toBe(403);
+			expectNoGrantIssued(callback);
+			expect(await kvKeys("grant:")).toEqual([]);
+		},
+	);
+
+	it("accepts the Workspace domain whatever its case", async () => {
+		const { callback } = await runAuthorization(
+			googleProfile("dg@nasta-univers.com", { hd: "Nasta-Univers.COM" }),
+		);
+		expect(callback.status).toBe(302);
+	});
+
 	it("refuses a Google profile without an email", async () => {
 		const { callback } = await runAuthorization(googleProfile("", { email: undefined }));
 		expect(callback.status).toBe(403);

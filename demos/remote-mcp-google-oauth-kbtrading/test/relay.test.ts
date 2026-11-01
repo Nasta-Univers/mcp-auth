@@ -205,6 +205,9 @@ describe("destination and credentials", () => {
 		["blank", "   "],
 		["already prefixed with Bearer", `Bearer ${KBTRADING_SECRET}`],
 		["holding two words", "two words"],
+		["holding an invisible character", "tok​en"],
+		["holding an accented character", "tokén"],
+		["absurdly long", "a".repeat(600)],
 	])("refuses to run when the shared secret is %s", async (_label, secret) => {
 		const upstreams = mockUpstreams({ kbtrading: () => new Response("should not be called") });
 		const response = await relay(mcpRequest({ id: 1, jsonrpc: "2.0", method: "ping" }), {
@@ -844,5 +847,69 @@ describe("what reaches KB Trading is what was checked", () => {
 		});
 		expect(response.status).toBe(502);
 		await vi.waitFor(() => expect(cancelled).toBe(true));
+	});
+});
+
+describe("newer MCP clients and server errors", () => {
+	it("forwards server/discover, which Claude sends before initialize", async () => {
+		const upstreams = mockUpstreams({
+			kbtrading: () => Response.json({ id: 0, jsonrpc: "2.0", result: { serverInfo: {} } }),
+		});
+		const response = await relay(
+			mcpRequest({ id: 0, jsonrpc: "2.0", method: "server/discover", params: {} }),
+		);
+		expect(response.status).toBe(200);
+		expect(upstreams.calls).toHaveLength(1);
+		expect(JSON.parse(upstreams.calls[0].body).method).toBe("server/discover");
+	});
+
+	it("passes a 4xx from the MCP server on unchanged and logs its message", async () => {
+		const warnings: unknown[][] = [];
+		vi.spyOn(console, "warn").mockImplementation((...args: unknown[]) => {
+			warnings.push(args);
+		});
+		const error = {
+			error: { code: -32600, message: "Bad Request: Unsupported protocol version" },
+			id: null,
+			jsonrpc: "2.0",
+		};
+		mockUpstreams({ kbtrading: () => Response.json(error, { status: 400 }) });
+
+		const response = await relay(
+			mcpRequest({ id: 1, jsonrpc: "2.0", method: "initialize", params: {} }),
+		);
+		expect(response.status).toBe(400);
+		expect(await response.json()).toEqual(error);
+
+		const logged = warnings.find(([event]) => event === "relay_upstream_rejected");
+		expect(logged?.[1]).toMatchObject({
+			detail: expect.stringContaining("Unsupported protocol version"),
+			forwardedHeaders: expect.arrayContaining(["x-access-token", "content-type"]),
+			responseContentType: "application/json",
+			rpcMethods: ["initialize"],
+			status: 400,
+		});
+		expect(JSON.stringify(warnings)).not.toContain(KBTRADING_SECRET);
+	});
+});
+
+describe("diagnosing the shared secret", () => {
+	it.each([
+		["contains_whitespace", "Bearer abc"],
+		["non_printable_ascii", "tok\u200Ben"],
+		["too_long", "b".repeat(600)],
+		["missing", ""],
+	])("logs why the secret is unusable (%s), never its value", async (issue, secret) => {
+		const errors: unknown[][] = [];
+		vi.spyOn(console, "error").mockImplementation((...args: unknown[]) => {
+			errors.push(args);
+		});
+		mockUpstreams({ kbtrading: () => new Response("should not be called") });
+		await relay(mcpRequest({ id: 1, jsonrpc: "2.0", method: "ping" }), {
+			env: { KBTRADING_ACCESS_TOKEN: secret },
+		});
+		const logged = errors.find(([event]) => event === "relay_misconfigured");
+		expect(logged?.[1]).toMatchObject({ kbtradingAccessTokenIssue: issue });
+		if (secret) expect(JSON.stringify(errors)).not.toContain(secret);
 	});
 });

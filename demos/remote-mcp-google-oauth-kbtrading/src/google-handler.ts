@@ -6,7 +6,12 @@ import {
 	type ResumedUpstream,
 } from "@cloudflare/workers-oauth-provider";
 import { Hono } from "hono";
-import { isAllowedEmail, isAllowedRedirectUri, normalizeEmail } from "./access";
+import {
+	isAllowedEmail,
+	isAllowedRedirectUri,
+	isRequiredHostedDomain,
+	normalizeEmail,
+} from "./access";
 import { renderConsentPage, renderMessagePage } from "./pages";
 import {
 	createPkcePair,
@@ -225,11 +230,15 @@ app.get("/callback", async (c) => {
 
 	// The allowlist decision is taken here, before any grant or code exists.
 	const email = normalizeEmail(user.email);
-	if (!user.emailVerified || !isAllowedEmail(email)) {
-		console.warn("login_denied", {
-			email,
-			reason: !user.emailVerified ? "email_not_verified" : "email_not_allowed",
-		});
+	const denial = !user.emailVerified
+		? "email_not_verified"
+		: !isAllowedEmail(email)
+			? "email_not_allowed"
+			: !isRequiredHostedDomain(user.hostedDomain)
+				? "hosted_domain_mismatch"
+				: null;
+	if (denial) {
+		console.warn("login_denied", { email, hostedDomain: user.hostedDomain, reason: denial });
 		return renderMessagePage(
 			403,
 			"Accès refusé",

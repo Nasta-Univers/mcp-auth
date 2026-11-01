@@ -14,6 +14,18 @@ export const ALLOWED_EMAILS: ReadonlySet<string> = new Set([
 	"mbalde@nasta-univers.com",
 ]);
 
+// The Google Workspace that must own the account, checked on Google's `hd` claim in addition
+// to the exact address: a personal Google account created with an allowed address (or an
+// old "conflicting" one) has no `hd` and is refused.
+export const REQUIRED_HOSTED_DOMAIN = "nasta-univers.com";
+
+export function isRequiredHostedDomain(hostedDomain: unknown): boolean {
+	return (
+		typeof hostedDomain === "string" &&
+		hostedDomain.trim().toLowerCase() === REQUIRED_HOSTED_DOMAIN
+	);
+}
+
 // Claude's OAuth callbacks for remote MCP connectors. An authorization request whose
 // redirect_uri is not listed here is refused before any consent or Google redirect,
 // so a client registered through /register cannot obtain a token for itself.

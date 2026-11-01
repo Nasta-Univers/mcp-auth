@@ -124,7 +124,14 @@ export function mockUpstreams(
 }
 
 export function googleProfile(email: string, overrides: Record<string, unknown> = {}) {
-	return { email, email_verified: true, name: "Test User", sub: "1234567890", ...overrides };
+	return {
+		email,
+		email_verified: true,
+		hd: "nasta-univers.com",
+		name: "Test User",
+		sub: "1234567890",
+		...overrides,
+	};
 }
 
 export async function registerClient(redirectUris: string[] = [CLAUDE_CALLBACK]): Promise<string> {

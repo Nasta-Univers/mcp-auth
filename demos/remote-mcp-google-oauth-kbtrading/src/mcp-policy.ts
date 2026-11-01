@@ -27,6 +27,9 @@ export const READ_ONLY_TOOLS: ReadonlySet<string> = new Set([
  * to server-initiated requests always pass.
  */
 export const ALLOWED_RPC_METHODS: ReadonlySet<string> = new Set([
+	// Newer MCP clients, Claude included, discover the server with server/discover before
+	// falling back to initialize. Both only describe the server.
+	"server/discover",
 	"initialize",
 	"ping",
 	"tools/list",

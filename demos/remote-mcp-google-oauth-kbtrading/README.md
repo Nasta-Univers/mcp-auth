@@ -55,6 +55,7 @@ La liaison KV s'appelle `OAUTH_KV` dans les deux Workers, car la bibliothèque O
 - **Authentification Google** :
     - Google OpenID Connect avec PKCE ; l'identité est lue sur l'endpoint `userinfo` de Google, jamais dans des données venant du navigateur ;
     - `email_verified` doit valoir exactement `true` ;
+    - le compte doit appartenir au Google Workspace `nasta-univers.com` (revendication `hd` renvoyée par Google). Un compte Google personnel créé avec une adresse autorisée est donc refusé ;
     - l'adresse est normalisée (espaces retirés, minuscules) puis comparée **exactement** à la liste. Ce contrôle a lieu avant `completeAuthorization` : un refus ne crée aucun grant ni jeton ;
     - seuls `https://claude.ai/api/mcp/auth_callback` et `https://claude.com/api/mcp/auth_callback` sont acceptés comme `redirect_uri`.
 - **Consentement et flux OAuth** :
@@ -142,7 +143,7 @@ npx wrangler secret put KBTRADING_ACCESS_TOKEN
 
 Wrangler demande la valeur de chaque secret. Pour `KBTRADING_ACCESS_TOKEN` :
 
-- **ne mettez que le jeton, sans `Bearer `** : le Worker construit lui-même `X-Access-Token: Bearer <jeton>`. Un secret vide, contenant un espace ou déjà préfixé par `Bearer` est refusé (erreur 500 `relay_misconfigured` dans les journaux, rien n'est envoyé) ;
+- **ne mettez que le jeton, sans `Bearer `** : le Worker construit lui-même `X-Access-Token: Bearer <jeton>`. Le jeton doit être en ASCII imprimable, sans espace ni caractère invisible ou accentué. Sinon rien n'est envoyé, et les journaux affichent `relay_misconfigured` avec la raison (`contains_whitespace`, `non_printable_ascii`, `too_long`, `missing`), jamais la valeur. Collez le jeton directement depuis le terminal du VPS, sans passer par un document ou une messagerie : leurs guillemets ou tirets typographiques suffisent à le rendre invalide ;
 - sa source est le fichier `/etc/nginx/secrets/kbtrading-mcp-token` du VPS ;
 - pour le transmettre sans l'afficher, depuis **CMD** (CMD transmet les octets tels quels, contrairement à PowerShell 5.1) :
 
@@ -197,7 +198,7 @@ Chaque utilisateur clique ensuite sur « Connecter ». Il voit la page de consen
     - la liste attendue dans `test/isolation.test.ts`.
 3. Lancez `npx pnpm@11.9.0 test:ci`, committez, puis `npx wrangler deploy` depuis ce dossier.
 
-Un compte retiré perd l'accès à sa requête suivante après le déploiement, car le relais revérifie la liste à chaque requête. Un compte ajouté doit aussi être utilisateur de test Google si l'écran de consentement est en mode « Testing ». Cette liste n'a aucun effet sur AMAT, et inversement.
+Un compte retiré perd l'accès à sa requête suivante après le déploiement, car le relais revérifie la liste à chaque requête. Un compte ajouté doit être un compte du Google Workspace `nasta-univers.com`, et aussi utilisateur de test Google si l'écran de consentement est en mode « Testing ». Cette liste n'a aucun effet sur AMAT, et inversement.
 
 ## 11. Procédure de test
 
@@ -256,7 +257,6 @@ Aucune de ces opérations ne touche au Worker AMAT.
 - **Pas de test réel avant déploiement :** le parcours complet Claude → Google → Worker → Nginx → Odoo n'a pas encore pu être testé. Les tests simulent Google et le serveur KB Trading.
 - **Outils de lecture :** la liste `READ_ONLY_TOOLS` reprend les noms d'outils de `mcp-server-odoo`, la même image que pour AMAT. Un outil ajouté par une future version reste bloqué tant qu'il n'est pas ajouté dans `src/mcp-policy.ts`.
 - **Format de l'URL amont :** si Nginx ou le serveur redirige entre `/mcp` et `/mcp/`, le relais répond 502. Passez alors `KBTRADING_MCP_URL` à la variante avec `/` final.
-- **Google Workspace :** si `nasta-univers.com` est un domaine Google Workspace, exiger aussi la revendication `hd` renforcerait la vérification. Ce contrôle n'est pas activé : il bloquerait tout le monde si le domaine n'est pas sur Workspace.
 - **Abus anonymes :** `/register` et `/authorize` écrivent dans KV sans authentification. Sur l'offre Workers Free (1 000 écritures KV par jour), un flot de requêtes peut bloquer les connexions jusqu'au lendemain.
 - **Sessions MCP :** elles ne sont pas liées à l'utilisateur OAuth. Les cinq comptes partagent la même identité Odoo côté serveur.
 - **Client Google partagé :** s'il est le même qu'AMAT, sa rotation concerne les deux Workers.

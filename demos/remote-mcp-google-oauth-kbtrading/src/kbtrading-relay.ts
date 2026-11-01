@@ -79,15 +79,27 @@ function resolveUpstreamUrl(configured: unknown): string | null {
 	return ALLOWED_UPSTREAM_URLS.has(url) ? url : null;
 }
 
+// Longer than any token Nginx would compare against: a secret this long was pasted wrong.
+const MAX_ACCESS_TOKEN_LENGTH = 512;
+
 /**
- * The X-Access-Token value the KB Trading Nginx expects: `Bearer <token>`. The secret holds
- * the token alone; one that is empty or contains whitespace (for example an already
- * prefixed "Bearer …") is a configuration error, so nothing is sent.
+ * Why the KBTRADING_ACCESS_TOKEN secret cannot be sent, or null when it can. The secret holds
+ * the token alone, in printable ASCII: whitespace (an already prefixed "Bearer …", a pasted
+ * line break) or any other character (an invisible one copied along) would make the request
+ * invalid before it reaches Nginx. Never includes the value itself.
  */
-function accessTokenHeader(secret: unknown): string | null {
-	if (typeof secret !== "string") return null;
+function accessTokenIssue(secret: unknown): string | null {
+	if (typeof secret !== "string" || secret.trim().length === 0) return "missing";
 	const token = secret.trim();
-	return /^\S+$/.test(token) ? `Bearer ${token}` : null;
+	if (/\s/.test(token)) return "contains_whitespace";
+	if (!/^[\x21-\x7e]+$/.test(token)) return "non_printable_ascii";
+	if (token.length > MAX_ACCESS_TOKEN_LENGTH) return "too_long";
+	return null;
+}
+
+/** The X-Access-Token value the KB Trading Nginx expects: `Bearer <token>`. */
+function accessTokenHeader(secret: unknown): string | null {
+	return accessTokenIssue(secret) === null ? `Bearer ${(secret as string).trim()}` : null;
 }
 
 /** Ends the response, and cancels the KB Trading response, once it exceeds `maxBytes`. */
@@ -185,6 +197,7 @@ export function createKbTradingRelay(limits: RelayLimits = DEFAULT_LIMITS) {
 			const accessToken = accessTokenHeader(env.KBTRADING_ACCESS_TOKEN);
 			if (!upstreamUrl || !accessToken) {
 				console.error("relay_misconfigured", {
+					kbtradingAccessTokenIssue: accessTokenIssue(env.KBTRADING_ACCESS_TOKEN),
 					kbtradingAccessTokenValid: accessToken !== null,
 					kbtradingMcpUrlAllowed: upstreamUrl !== null,
 				});
@@ -281,6 +294,27 @@ export function createKbTradingRelay(limits: RelayLimits = DEFAULT_LIMITS) {
 			}
 
 			let responseBody = pipe(upstream.body, createByteLimit(limits.maxResponseBytes));
+
+			// A 4xx the MCP server sends itself (bad request, expired session, ...) reaches the
+			// client unchanged; its message is also logged, so the cause shows up in the Worker
+			// logs. These are protocol errors from the server, not Odoo data or credentials.
+			if (status >= 400) {
+				const text = await new Response(responseBody).text();
+				console.warn("relay_upstream_rejected", {
+					detail: text.replace(/\s+/g, " ").slice(0, 300),
+					email,
+					// Who answered (Nginx, Cloudflare, the MCP server) and what was sent: header
+					// names only, never their values.
+					forwardedHeaders: [...headers.keys()],
+					responseContentLength: upstream.headers.get("content-length"),
+					responseContentType: upstream.headers.get("content-type"),
+					responseServer: upstream.headers.get("server"),
+					rpcMethods: inspected?.methods ?? [],
+					status,
+				});
+				return new Response(text, { status, headers: responseHeaders });
+			}
+
 			const toolsListIds = inspected?.toolsListIds;
 			if (toolsListIds && toolsListIds.size > 0) {
 				const contentType = (upstream.headers.get("content-type") ?? "").toLowerCase();

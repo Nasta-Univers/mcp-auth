@@ -111,6 +111,8 @@ export type GoogleUser = {
 	sub: string;
 	email: string;
 	emailVerified: boolean;
+	/** The Google Workspace domain of the account (`hd` claim); empty for a personal account. */
+	hostedDomain: string;
 	name: string;
 };
 
@@ -143,6 +145,7 @@ export async function fetchGoogleUser(accessToken: string): Promise<GoogleUser |
 	return {
 		sub: info.sub,
 		email: typeof info.email === "string" ? info.email : "",
+		hostedDomain: typeof info.hd === "string" ? info.hd : "",
 		// Only a JSON boolean true counts as verified.
 		emailVerified: info.email_verified === true,
 		name: typeof info.name === "string" ? info.name : "",
